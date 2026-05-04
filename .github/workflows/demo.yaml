@@ -1,0 +1,47 @@
+name: spring project
+on:
+    push:
+        branches:
+            - main
+permissions:                    
+  checks: write
+  contents: read
+  pull-requests: write
+  security-events: write
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: get the code
+              uses: actions/checkout@v4
+
+            - name: set-up java
+              uses: actions/setup-java@v4
+              with:
+                java-version: 17
+                distribution: temurin
+            
+            - name: generate css
+              run: ./mvnw generate-resources -P css
+
+            - name: initialize codeql
+              uses: github/codeql-action/init@v4
+              with:
+                languages: java
+            - name: run tests
+              run: ./mvnw --batch-mode -Dmaven.test.failure.ignore=true test
+            - name: packing jar
+              run: ./mvnw package -DskipTests
+
+            - name: codeql analayze
+              uses: github/codeql-action/analyze@v4
+            
+            - name: publish test results
+              uses: EnricoMi/publish-unit-test-result-action@v2
+              with:
+                files: "**/target/surefire-reports/**/*.xml"
+                comment_mode: always
+
+            
+
+
